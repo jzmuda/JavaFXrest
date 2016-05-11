@@ -1,0 +1,7 @@
+{
+    "id": 1
+,
+    "title": "tit",
+    "authors": "aut"
+,	"status": "stat"}
+[{"id":1,"title":"First book","authors":"Jan Kowalski","status":"FREE"},{"id":4,"title":"Fourth book","authors":"Janusz Jankowski","status":"MISSING"}]
