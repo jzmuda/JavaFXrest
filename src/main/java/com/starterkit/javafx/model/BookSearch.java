@@ -44,11 +44,13 @@ public class BookSearch {
 	}
 	
 	public final String getId() {
+		// REV: zadeklaruj jako string, a nie konwertuj, typ nie zgadza sie z typem idProperty
 		return id.toString();
 	}
 	
 	
 	public final void setId(String value) {
+		// REV: j.w.
 		id.set(Integer.parseInt(value));
 	}
 	
@@ -82,6 +84,7 @@ public class BookSearch {
 	}
 
 	public final String getStatus() {
+		// REV: j.w.
 		return status.get().toString();
 	}
 
@@ -89,6 +92,7 @@ public class BookSearch {
 		status.set(value);
 	}
 	
+	// REV: nazwa metody sugeruje calkiem co innego
 	public final void setBadUrl() {
 		setAuthors("");
 		setTitle("");
@@ -117,7 +121,7 @@ public class BookSearch {
 				+ result + "]";
 	}
 
-
+	// REV: ta metoda nie jest uzywana
 	public void checkURL() {
 		// TODO Auto-generated method stub
 		

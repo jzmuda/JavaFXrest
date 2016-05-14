@@ -14,6 +14,7 @@
       <ColumnConstraints hgrow="SOMETIMES" maxWidth="541.0" minWidth="10.0" prefWidth="541.0" />
     </columnConstraints>
     <rowConstraints>
+    <!-- REV: nieuzywany element -->
       <RowConstraints />
       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -45,6 +46,7 @@
      <buttons>
        <Button fx:id="searchButton" mnemonicParsing="false" onAction="#searchAction" text="%button.search" />
          <Button fx:id="addButton" mnemonicParsing="false" onAction="#addAction" text="%button.add" />
+         <!-- REV: przycisk powinien byc przy urlField -->
          <Button fx:id="enterUrlButton" mnemonicParsing="false" onAction="#acceptUrl" text="%button.enterurl" />
      </buttons>
    </ButtonBar>

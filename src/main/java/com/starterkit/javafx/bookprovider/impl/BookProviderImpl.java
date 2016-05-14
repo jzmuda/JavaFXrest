@@ -36,6 +36,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 public class BookProviderImpl implements BookProvider {
 	
 	private String url = "";
+	// REV: wynik wyszukiwania nie powinien byc przechowywany w klasie
 	private Collection<BookVO> books;
 	private static final Logger LOG = Logger.getLogger(BookProviderImpl.class);
 	private final ObjectMapper objectMapper = new ObjectMapper();
@@ -58,6 +59,7 @@ public class BookProviderImpl implements BookProvider {
 		LOG.debug("\nSending 'GET' request to URL : " + searchUrl);
 		LOG.debug("Response Code : " + responseCode);
 		
+		// REV: nieuzywany kod powinien byc usuniety
 //		BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
 //        String line;
 //        while ((line = br.readLine()) != null) {
@@ -67,6 +69,7 @@ public class BookProviderImpl implements BookProvider {
 //		
 		
 		InputStream inputStream = con.getInputStream();		
+		// REV: po co drugi mapper? uzywaj objectMappera zdefiniowanego w klasie
 		ObjectMapper mapper = new ObjectMapper();
 		
 		CollectionType constructCollectionType = mapper.getTypeFactory().constructCollectionType(List.class,
@@ -75,6 +78,7 @@ public class BookProviderImpl implements BookProvider {
 		books = extractBook(inputStream, constructCollectionType);
 		
 		LOG.debug("Books size: " + books.size());
+		// REV: unikaj castowania, lepiej zmienic typ zmiennej
 		return (List<BookVO>) books;
 	}
 	
@@ -83,6 +87,7 @@ public class BookProviderImpl implements BookProvider {
 		try {
 			value = objectMapper.readValue(inputStream, constructCollectionType);
 		} catch (IOException e) {
+			// REV: obsluga wyjatkow
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -94,15 +99,18 @@ public class BookProviderImpl implements BookProvider {
 		BookVO book = new BookVO(0L,author,title,status);
 		String bookJSON = "";
 		try {
+			// REV: uzywaj mappera zdefiniowanego w klasie
 			bookJSON = new ObjectMapper().writeValueAsString(book);
 			LOG.debug("json created");
 		} catch (JsonProcessingException e) {
+			// REV: obsluga wyjatkow
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		String addUrl = url+"update";
 
+		// REV: obiekt HttpClient powinien byc zdefiniowany jako zmienna w klasie
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost postRequest = new HttpPost(addUrl);
 		postRequest.setHeader("Content-Type", "application/json");
@@ -110,6 +118,7 @@ public class BookProviderImpl implements BookProvider {
 			postRequest.setEntity(new StringEntity(bookJSON));
 			LOG.debug("json added");
 		} catch (UnsupportedEncodingException e) {
+			// REV: obsluga wyjatkow
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -117,7 +126,10 @@ public class BookProviderImpl implements BookProvider {
 		try {
 			response2 = client.execute(postRequest);
 			LOG.debug("json posted under "+addUrl);
+			
+			// REV: powinienes sprawdzic czy dostales HTTP code=200 od serwera
 		} catch (IOException e) {
+			// REV: obsluga wyjatkow
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
@@ -153,7 +165,7 @@ public class BookProviderImpl implements BookProvider {
 		else return text;
 	}
 	
-	
+	// REV: nieuzywany kod powinien byc usuniety
 //old'n crappy parser	
 	private void parseData(String line) {
 		// TODO Auto-generated method stub

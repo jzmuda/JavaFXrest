@@ -164,6 +164,7 @@ public class BookSearchController {
 		 */
 		model.setStatus(BookStatus.FREE);
 
+		// REV: nieuzywany kod
 		/*
 		 * This works also, because we are using bidirectional binding.
 		 */
@@ -272,6 +273,7 @@ public class BookSearchController {
 
 						@Override
 						protected void failed() {
+							// REV: uzytkownik tego nie zauwazy
 							LOG.error("Could not say name: " + newValue.getAuthors(), getException());
 						}
 					};
@@ -341,6 +343,7 @@ public class BookSearchController {
 				if(!result)
 					model.setBadUrl();
 				else {
+					// REV: lepiej zrobic to przez binding
 						urlField.setDisable(true);
 						enterUrlButton.setDisable(true);
 						authorsField.setDisable(false);
@@ -458,6 +461,7 @@ public class BookSearchController {
 				 * Value returned from this method is stored as a result of task
 				 * execution.
 				 */
+				// REV: zawsze zwracasz true, wiec lepiej nic nie zwracac (Void)
 				return true;
 			}
 
@@ -467,6 +471,7 @@ public class BookSearchController {
 			 */
 			@Override
 			protected void succeeded() {
+				// REV: warto pokazac uzytkownikowi jakis komunikat, rowniez gdy operacja sie nie uda
 				LOG.debug("succeeded() called");
 			}
 		};

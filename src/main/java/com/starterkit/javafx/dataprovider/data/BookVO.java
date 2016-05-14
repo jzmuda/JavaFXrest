@@ -1,5 +1,7 @@
 package com.starterkit.javafx.dataprovider.data;
 
+// REV: ta klasa powinna byc w pakiecie bookprovider
+
 /**
  * Person data.
  *
