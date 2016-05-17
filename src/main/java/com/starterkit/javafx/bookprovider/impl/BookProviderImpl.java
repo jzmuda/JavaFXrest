@@ -1,9 +1,7 @@
 package com.starterkit.javafx.bookprovider.impl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -20,14 +18,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
-import com.starterkit.javafx.bookprovider.BookProvider;
-import com.starterkit.javafx.dataprovider.data.BookVO;
-import com.starterkit.javafx.dataprovider.data.BookStatusVO;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import com.starterkit.javafx.bookprovider.BookProvider;
+import com.starterkit.javafx.dataprovider.data.BookStatusVO;
+import com.starterkit.javafx.dataprovider.data.BookVO;
 /**
  * provides book list from rest service requests to local server
  * @author JZMUDA
@@ -36,7 +32,6 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 public class BookProviderImpl implements BookProvider {
 	
 	private String url = "";
-	private Collection<BookVO> books;
 	private static final Logger LOG = Logger.getLogger(BookProviderImpl.class);
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -53,29 +48,12 @@ public class BookProviderImpl implements BookProvider {
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
 		con.setRequestProperty("User-Agent", null);
-
-		int responseCode = con.getResponseCode();
-		LOG.debug("\nSending 'GET' request to URL : " + searchUrl);
-		LOG.debug("Response Code : " + responseCode);
 		
-//		BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-//        String line;
-//        while ((line = br.readLine()) != null) {
-//            parseData(line);
-//        }
-//        br.close();
-//		
+		InputStream inputStream = con.getInputStream();
 		
-		InputStream inputStream = con.getInputStream();		
-		ObjectMapper mapper = new ObjectMapper();
-		
-		CollectionType constructCollectionType = mapper.getTypeFactory().constructCollectionType(List.class,
+		CollectionType constructCollectionType = objectMapper.getTypeFactory().constructCollectionType(List.class,
 				BookVO.class);
-		
-		books = extractBook(inputStream, constructCollectionType);
-		
-		LOG.debug("Books size: " + books.size());
-		return (List<BookVO>) books;
+		return (List<BookVO>) extractBook(inputStream, constructCollectionType);
 	}
 	
 	private List<BookVO> extractBook(InputStream inputStream, CollectionType constructCollectionType) {
@@ -83,8 +61,7 @@ public class BookProviderImpl implements BookProvider {
 		try {
 			value = objectMapper.readValue(inputStream, constructCollectionType);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IllegalStateException("Corrupt data: could not parse");
 		}
 		return value instanceof List ? (List<BookVO>) value:new ArrayList<BookVO>();
 	}
@@ -97,8 +74,7 @@ public class BookProviderImpl implements BookProvider {
 			bookJSON = new ObjectMapper().writeValueAsString(book);
 			LOG.debug("json created");
 		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IllegalStateException("Add method EROR: could not create JSON");
 		}
 
 		String addUrl = url+"update";
@@ -110,16 +86,14 @@ public class BookProviderImpl implements BookProvider {
 			postRequest.setEntity(new StringEntity(bookJSON));
 			LOG.debug("json added");
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IllegalStateException("Add method EROR: could not parse data to POST");
 		}
 		HttpResponse response2;
 		try {
 			response2 = client.execute(postRequest);
 			LOG.debug("json posted under "+addUrl);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IllegalStateException("Add method EROR: POST request failure");
 		}		
 	}
 
@@ -136,11 +110,11 @@ public class BookProviderImpl implements BookProvider {
 			    huc.disconnect();
 			} catch (IOException e) {
 				this.url="";
-				return false;
+				throw new IllegalStateException("Bad URL");
 			}
 		} catch (MalformedURLException e1) {
 			this.url="";
-			return false;
+			throw new IllegalStateException("Bad URL");
 		}
 		this.url=url;
 		return true;
@@ -152,33 +126,5 @@ public class BookProviderImpl implements BookProvider {
 		}
 		else return text;
 	}
-	
-	
-//old'n crappy parser	
-	private void parseData(String line) {
-		// TODO Auto-generated method stub
-		books=new ArrayList<BookVO>();
-		line=strip(line);
-		String data[] = line.split(",");
-		if(data.length>=4)
-			for(int i =0; i <data.length-4;i=i+4){
-				books.add(new BookVO(Long.parseLong(data[i]), data[i+1], data[i+2], BookStatusVO.valueOf(data[i+3])));
-			}
-	}
-
-
-	private String strip(String line) {
-		line=line.replace("\"", "");
-		line=line.replace("[", "");
-		line=line.replace("]", "");
-		line=line.replace("{", "");
-		line=line.replace("}", "");
-		line=line.replace("id:", "");
-		line=line.replace("title:", "");
-		line=line.replace("authors:", "");
-		line=line.replace("status:", "");
-		return line;
-	}
-
 
 }

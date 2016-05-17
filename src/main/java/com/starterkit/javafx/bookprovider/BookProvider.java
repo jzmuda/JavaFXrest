@@ -47,6 +47,6 @@ public interface BookProvider {
 	 * @param status
 	 *           
 	 */
-	void addBook(String author, String title, BookStatusVO status);
+	void addBook(String author, String title, BookStatusVO status) throws Exception;
 	Boolean checkURL(String url);
 }

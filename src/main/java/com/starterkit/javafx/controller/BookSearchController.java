@@ -1,8 +1,5 @@
 package com.starterkit.javafx.controller;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,8 +7,6 @@ import java.util.ResourceBundle;
 
 import org.apache.log4j.Logger;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.starterkit.javafx.bookprovider.BookProvider;
 import com.starterkit.javafx.dataprovider.data.BookStatusVO;
 import com.starterkit.javafx.dataprovider.data.BookVO;
@@ -19,7 +14,6 @@ import com.starterkit.javafx.model.BookSearch;
 import com.starterkit.javafx.model.BookStatus;
 import com.starterkit.javafx.texttospeech.Speaker;
 
-import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
@@ -52,7 +46,7 @@ import javafx.util.StringConverter;
 public class BookSearchController {
 
 	private static final Logger LOG = Logger.getLogger(BookSearchController.class);
-
+	private final BookVO error = new BookVO(-1L, "ERROR", "", BookStatusVO.MISSING);
 	/**
 	 * Resource bundle loaded with this controller. JavaFX injects a resource
 	 * bundle specified in {@link FXMLLoader#load(URL, ResourceBundle)} call.
@@ -98,6 +92,9 @@ public class BookSearchController {
 
 	@FXML
 	private Button addButton;
+
+	@FXML
+	private Label errorLabel;
 
 	@FXML
 	private TableView<BookVO> resultTable;
@@ -149,7 +146,7 @@ public class BookSearchController {
 		initializeStatusField();
 
 		initializeResultTable();
-	
+
 		/*
 		 * Bind controls properties to model properties.
 		 */
@@ -182,7 +179,7 @@ public class BookSearchController {
 		BooleanBinding booleanAddBinding = 
 				authorsField.textProperty().isEmpty().or(
 						titleField.textProperty().isEmpty());
-		
+
 		//searchButton.disableProperty().bind(booleanSearchBinding);
 		addButton.disableProperty().bind(booleanAddBinding);
 	}
@@ -246,7 +243,7 @@ public class BookSearchController {
 		authorsColumn.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getAuthors()));
 		titleColumn.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getTitle()));
 		statusColumn.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getStatus()));
-		
+
 		/*
 		 * Show specific text for an empty table. This can also be done in FXML.
 		 */
@@ -327,25 +324,31 @@ public class BookSearchController {
 			@Override
 			protected Boolean call() throws Exception {
 				LOG.debug("call() called for ValidateUrl");
-				return bookProvider.checkURL(model.getUrl());
-			}			
-
+				try {
+					bookProvider.checkURL(model.getUrl());
+				} catch (Exception e) {
+					return false;
+				}
+				return true;
+			}
 			/**
 			 * This method will be executed in the JavaFX Application Thread
 			 * when the task finishes.
 			 */
 			@Override
 			protected void succeeded() {
-				boolean result = getValue();
-				LOG.debug("succeeded() called for ValidateUrl with result "+result);
-				if(!result)
-					model.setBadUrl();
+				LOG.debug("succeeded() called for ValidateUrl");
+				if(getValue()) {
+					errorLabel.setText("");
+					urlField.setDisable(true);
+					enterUrlButton.setDisable(true);
+					authorsField.setDisable(false);
+					titleField.setDisable(false);
+					searchButton.setDisable(false);
+				}
 				else {
-						urlField.setDisable(true);
-						enterUrlButton.setDisable(true);
-						authorsField.setDisable(false);
-						titleField.setDisable(false);
-						searchButton.setDisable(false);
+					model.setBadUrl();
+					errorLabel.setText("Bad or Malformed URL!");
 				}
 			}
 		};
@@ -387,15 +390,23 @@ public class BookSearchController {
 				/*
 				 * Get the data.
 				 */
-				Collection<BookVO> result =  bookProvider.findBooks( //
-						model.getAuthors(), //
-						model.getTitle());
-				
+				try{
+					Collection<BookVO> result =  bookProvider.findBooks( //
+							model.getAuthors(), //
+							model.getTitle());
+					return result;
+				} catch (Exception e) {
+					LOG.debug(e.getMessage());
+					Collection<BookVO> result = new ArrayList<BookVO>();
+					result.add(error);
+					return result;
+				}
+
 				/*
 				 * Value returned from this method is stored as a result of task
 				 * execution.
 				 */
-				return result;
+
 			}
 
 			/**
@@ -404,12 +415,18 @@ public class BookSearchController {
 			 */
 			@Override
 			protected void succeeded() {
-				LOG.debug("succeeded() called");
 
 				/*
 				 * Get result of the task execution.
 				 */
 				Collection<BookVO> result = getValue();
+				errorLabel.setText("");
+				if(result.isEmpty()) {
+					errorLabel.setText("No items matched the criteria");
+				}
+				else if(result.contains(error)) {
+					errorLabel.setText("Unexpected ERROR during SEARCH execution");
+				}
 
 				/*
 				 * Copy the result to model.
@@ -419,6 +436,8 @@ public class BookSearchController {
 				 * Reset sorting in the result table.
 				 */
 				resultTable.getSortOrder().clear();
+
+
 			}
 		};
 
@@ -435,13 +454,14 @@ public class BookSearchController {
 		LOG.debug("'Add' button clicked");
 		saddButtonAction();
 	}
-	
+
 	private void saddButtonAction() {
 		/*
 		 * Use task to execute the potentially long running call in background
 		 * (separate thread), so that the JavaFX Application Thread is not
 		 * blocked.
 		 */
+
 		Task<Boolean> backgroundTask = new Task<Boolean>() {
 
 			/**
@@ -449,16 +469,21 @@ public class BookSearchController {
 			 */
 			@Override
 			protected Boolean call() throws Exception {
-				bookProvider.addBook(
-						model.getTitle(),
-						model.getAuthors(),
-						BookStatusVO.valueOf(model.getStatus()));
-				
+				try {
+					bookProvider.addBook(
+							model.getTitle(),
+							model.getAuthors(),
+							BookStatusVO.valueOf(model.getStatus()));
+					return true;
+				} catch (Exception e) {
+					LOG.debug(e.getMessage());
+					return false;
+				}
 				/*
 				 * Value returned from this method is stored as a result of task
 				 * execution.
 				 */
-				return true;
+
 			}
 
 			/**
@@ -467,7 +492,10 @@ public class BookSearchController {
 			 */
 			@Override
 			protected void succeeded() {
-				LOG.debug("succeeded() called");
+				if(getValue())
+					errorLabel.setText("Item added");
+				else
+					errorLabel.setText("Unexpected error during execution of add!");
 			}
 		};
 
